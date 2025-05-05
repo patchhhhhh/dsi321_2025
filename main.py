@@ -1,11 +1,10 @@
 from serpapi import DuckDuckGoSearch
 import pandas as pd
-import time
 from datetime import datetime
 import os
 
-# 🔑 ใส่ API Key ที่ได้จาก serpapi.com
-API_KEY = "15179a882a5e319597d7dcb0fa7a2e61516f3cfbca11839352ad2f5545f0b5aa"  # <== เปลี่ยนตรงนี้
+# 🔑 API Key จาก serpapi.com
+API_KEY = "15179a882a5e319597d7dcb0fa7a2e61516f3cfbca11839352ad2f5545f0b5aa"
 
 # 🔍 คำค้นหาเกี่ยวกับวัสดุก่อสร้างยั่งยืน
 QUERIES = [
@@ -15,8 +14,6 @@ QUERIES = [
     "green construction trends"
 ]
 
-# 🕒 ตั้งเวลาคั่นระหว่างการดึงข้อมูล (หน่วย: นาที)
-INTERVAL_MINUTES = 30
 CSV_FILENAME = "construction_materials_serpapi.csv"
 
 def search_duckduckgo(query):
@@ -54,22 +51,14 @@ def save_to_csv(data, filename=CSV_FILENAME):
     df_all.to_csv(filename, index=False)
     print(f"💾 Saved {len(data)} rows to '{filename}'\n")
 
-# 🔁 วนลูปทุก INTERVAL_MINUTES นาที
-print("🔄 Start DuckDuckGo (via SerpAPI) scraping loop. Press Ctrl+C to stop.")
-try:
-    while True:
-        all_results = []
+# 📥 ดึงข้อมูลจากทุก query
+all_results = []
+for query in QUERIES:
+    data = search_duckduckgo(query)
+    all_results.extend(data)
 
-        for query in QUERIES:
-            data = search_duckduckgo(query)
-            all_results.extend(data)
-            time.sleep(5)  # พักระหว่างคำค้น
-
-        if all_results:
-            save_to_csv(all_results)
-
-        print(f"⏳ Waiting {INTERVAL_MINUTES} minutes...\n")
-        time.sleep(INTERVAL_MINUTES * 60)
-
-except KeyboardInterrupt:
-    print("🛑 Stopped by user.")
+# 💾 บันทึกลง CSV
+if all_results:
+    save_to_csv(all_results)
+else:
+    print("⚠️ No data fetched.")
