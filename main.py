@@ -1,13 +1,10 @@
-import requests
-import pandas as pd
-from datetime import datetime, timedelta
+import feedparser
+import csv
+from datetime import datetime
 import os
 
-# 🔑 API Key ของ NewsAPI
-API_KEY = "your_newsapi_key_here"  # ← ใส่ของคุณเองที่นี่
-
-# 🔍 คำค้นหา
-QUERIES = [
+# คำค้นหาหลายคำที่เกี่ยวกับ alternative construction materials
+search_keywords = [
     "Life Cycle Assessment of Alternative Construction Materials",
     "Physical and Mechanical Properties of Compressed Earth Blocks",
     "The Potential of Bamboo as a Structural Construction Material",
@@ -30,98 +27,46 @@ QUERIES = [
     "Building Networks and Collaboration for the Development of Alternative Construction Materials"
 ]
 
-CSV_FILENAME = "construction_materials_newsapi.csv"
-NEWSAPI_ENDPOINT = "https://newsapi.org/v2/everything"
+# สร้างโฟลเดอร์ 'data' ถ้ายังไม่มี
+os.makedirs("data", exist_ok=True)
+# ชื่อไฟล์ CSV ที่จะบันทึก
+csv_path = os.path.join("data", "scrap.csv")
+file_exists = os.path.isfile(csv_path)
 
-# 📅 วันย้อนหลัง 5 ปี
-five_years_ago = datetime.now() - timedelta(days=5*365)
-from_date = five_years_ago.strftime('%Y-%m-%d')
-to_date = datetime.now().strftime('%Y-%m-%d')
+# โหลดลิงก์ที่เคยบันทึกไว้
+existing_links = set()
+if file_exists:
+    with open(csv_path, mode='r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames and "link" in reader.fieldnames:
+            for row in reader:
+                existing_links.add(row["link"])
+        else:
+            print("❌ ไม่พบหรือไม่มี field 'link' ในไฟล์ CSV")
 
-# 📂 โหลด URL ที่เคยบันทึก
-def load_seen_urls():
-    if os.path.exists(CSV_FILENAME):
-        df = pd.read_csv(CSV_FILENAME)
-        return set(df['url'].values)
-    return set()
+# เตรียมเขียน CSV
+new_entries = 0
+with open(csv_path, mode='a', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
 
-# 🔍 ดึงข่าวจาก NewsAPI
-def search_news(query, page_size=100, max_pages=10):
-    seen_urls = load_seen_urls()
-    all_data = []
+    # เขียน header ถ้ายังไม่มีไฟล์
+    if not file_exists:
+        writer.writerow(["title", "link", "published", "fetched_at", "keyword"])
 
-    for page in range(1, max_pages + 1):
-        params = {
-            "q": query,
-            "from": from_date,
-            "to": to_date,
-            "sortBy": "relevancy",
-            "language": "en",
-            "apiKey": API_KEY,
-            "pageSize": page_size,
-            "page": page
-        }
+    for keyword in search_keywords:
+        rss_url = f"https://news.google.com/rss/search?q={keyword.replace(' ', '+')}"
+        feed = feedparser.parse(rss_url)
 
-        response = requests.get(NEWSAPI_ENDPOINT, params=params)
-        result = response.json()
+        for entry in feed.entries:
+            if entry.link not in existing_links:
+                writer.writerow([
+                    entry.title,
+                    entry.link,
+                    entry.published,
+                    datetime.now().isoformat(),
+                    keyword
+                ])
+                existing_links.add(entry.link)
+                new_entries += 1
 
-        if result.get("status") != "ok":
-            print(f"❌ Error fetching data for '{query}':", result.get("message"))
-            break
-
-        articles = result.get("articles", [])
-        if not articles:
-            break
-
-        for article in articles:
-            url = article["url"]
-            if url in seen_urls:
-                continue
-            seen_urls.add(url)
-
-            all_data.append({
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "query": query,
-                "title": article["title"],
-                "url": url,
-                "publishedAt": article["publishedAt"],
-                "source": article["source"]["name"],
-                "description": article.get("description", ""),
-                "content": article.get("content", "")
-            })
-
-        print(f"✅ Fetched {len(articles)} results for '{query}' (page {page})")
-
-    return all_data
-
-# 💾 บันทึกข้อมูลลง CSV
-def save_to_csv(data, filename=CSV_FILENAME):
-    df_new = pd.DataFrame(data)
-
-    if os.path.exists(filename):
-        df_old = pd.read_csv(filename)
-        df_all = pd.concat([df_old, df_new], ignore_index=True)
-    else:
-        df_all = df_new
-
-    df_all.to_csv(filename, index=False)
-    print(f"💾 Saved {len(data)} rows to '{filename}'\n")
-
-# 📥 ดึงข้อมูลจากทุก query
-all_results = []
-results_needed = 1000
-queries_handled = 0
-
-# คำนวณว่าเราจะต้องดึงข้อมูลจากหลายหน้าและหลายคำค้น
-for query in QUERIES:
-    if queries_handled >= results_needed:
-        break
-    data = search_news(query, page_size=100, max_pages=10)  # ใช้หน้า 10 เพื่อดึง 100 รายการต่อหน้า
-    all_results.extend(data)
-    queries_handled += len(data)
-
-# 💾 บันทึก
-if all_results:
-    save_to_csv(all_results)
-else:
-    print("⚠️ No data fetched.")
+print(f"✅ ดึงข่าวใหม่ {new_entries} รายการจาก {len(search_keywords)} คำค้นและบันทึกลง scrap.csv แล้ว")
