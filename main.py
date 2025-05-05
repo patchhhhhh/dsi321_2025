@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import os
 
 # 🔑 API Key ของ NewsAPI
-API_KEY = "fee365b47a584e7db93aae52b5b85e4f"  # ← ใส่ของคุณเองที่นี่
+API_KEY = "your_newsapi_key_here"  # ← ใส่ของคุณเองที่นี่
 
 # 🔍 คำค้นหา
 QUERIES = [
@@ -33,11 +33,10 @@ QUERIES = [
 CSV_FILENAME = "construction_materials_newsapi.csv"
 NEWSAPI_ENDPOINT = "https://newsapi.org/v2/everything"
 
-# 📅 วันย้อนหลัง 30 วัน
-thirty_days_ago = datetime.now() - timedelta(days=30)
-from_date = thirty_days_ago.strftime('%Y-%m-%d')
+# 📅 วันย้อนหลัง 5 ปี
+five_years_ago = datetime.now() - timedelta(days=5*365)
+from_date = five_years_ago.strftime('%Y-%m-%d')
 to_date = datetime.now().strftime('%Y-%m-%d')
-
 
 # 📂 โหลด URL ที่เคยบันทึก
 def load_seen_urls():
@@ -47,7 +46,7 @@ def load_seen_urls():
     return set()
 
 # 🔍 ดึงข่าวจาก NewsAPI
-def search_news(query, page_size=100, max_pages=5):
+def search_news(query, page_size=100, max_pages=10):
     seen_urls = load_seen_urls()
     all_data = []
 
@@ -110,9 +109,16 @@ def save_to_csv(data, filename=CSV_FILENAME):
 
 # 📥 ดึงข้อมูลจากทุก query
 all_results = []
+results_needed = 1000
+queries_handled = 0
+
+# คำนวณว่าเราจะต้องดึงข้อมูลจากหลายหน้าและหลายคำค้น
 for query in QUERIES:
-    data = search_news(query, max_pages=3)
+    if queries_handled >= results_needed:
+        break
+    data = search_news(query, page_size=100, max_pages=10)  # ใช้หน้า 10 เพื่อดึง 100 รายการต่อหน้า
     all_results.extend(data)
+    queries_handled += len(data)
 
 # 💾 บันทึก
 if all_results:
