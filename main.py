@@ -5,11 +5,8 @@ import os
 
 # คำค้นหาหลายคำที่เกี่ยวกับ alternative construction materials
 search_keywords = [
-    "Life Cycle Assessment of Alternative Construction Materials",
-    "Physical and Mechanical Properties of Compressed Earth Blocks",
-    "The Potential of Bamboo as a Structural Construction Material",
-    "Applications of Concrete Mixed with Recycled Materials",
-    "Thermal Insulation from Natural Materials"
+    "Developing Construction Materials from Agricultural Waste",
+    "Bio-based Construction Materials"
 ]
 
 # สร้างโฟลเดอร์ 'data' ถ้ายังไม่มี
