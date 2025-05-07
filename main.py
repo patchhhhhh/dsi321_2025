@@ -5,8 +5,9 @@ import os
 
 # คำค้นหาหลายคำที่เกี่ยวกับ alternative construction materials
 search_keywords = [
-    "Developing Construction Materials from Agricultural Waste",
-    "Bio-based Construction Materials"
+    "The Use of 3D Printing with Alternative Construction Materials",
+    "Designing Energy-Efficient Buildings with Alternative Construction Materials",
+    "Standards and Regulations for Alternative Construction Materials"
 ]
 
 # สร้างโฟลเดอร์ 'data' ถ้ายังไม่มี
