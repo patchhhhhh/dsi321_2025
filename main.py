@@ -5,8 +5,9 @@ import os
 
 # คำค้นหาหลายคำที่เกี่ยวกับ alternative construction materials
 search_keywords = [
-    "Promoting Alternative Construction Materials for Sustainable Development",
-    "Consumer Awareness and Understanding of Alternative Construction Materials"
+    "Opportunities and Challenges in the Production of Alternative Construction Materials in Thailand",
+    "Developing Alternative Construction Materials with Enhanced Properties",
+    "Improving the Properties of Alternative Construction Materials with New Technologies"
 ]
 
 # สร้างโฟลเดอร์ 'data' ถ้ายังไม่มี
