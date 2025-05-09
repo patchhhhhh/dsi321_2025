@@ -5,9 +5,9 @@ import os
 
 # คำค้นหาหลายคำที่เกี่ยวกับ alternative construction materials
 search_keywords = [
-    "Opportunities and Challenges in the Production of Alternative Construction Materials in Thailand",
-    "Developing Alternative Construction Materials with Enhanced Properties",
-    "Improving the Properties of Alternative Construction Materials with New Technologies"
+   "Research and Development of Alternative Construction Materials from Local Resources",
+   "Integrating Alternative Construction Materials into the Circular Economy Concept",
+   "Building Networks and Collaboration for the Development of Alternative Construction Materials"
 ]
 
 # สร้างโฟลเดอร์ 'data' ถ้ายังไม่มี
