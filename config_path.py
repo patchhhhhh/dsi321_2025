@@ -1,0 +1,22 @@
+search_keyword = [
+   "Life Cycle Assessment of Alternative Construction Materials",
+   "Physical and Mechanical Properties of Compressed Earth Blocks",
+   "The Potential of Bamboo as a Structural Construction Material",
+   "Applications of Concrete Mixed with Recycled Materials",
+   "Thermal Insulation from Natural Materials", 
+   "Developing Construction Materials from Agricultural Waste",
+   "Bio-based Construction Materials",
+   "The Use of 3D Printing with Alternative Construction Materials",
+   "Designing Energy-Efficient Buildings with Alternative Construction Materials",
+   "Standards and Regulations for Alternative Construction Materials",
+   "Adoption and Acceptance of Alternative Construction Materials in Thailand",
+   "The Economic Impact of Using Alternative Construction Materials on Local Communities",
+   "Promoting Alternative Construction Materials for Sustainable Development",
+   "Consumer Awareness and Understanding of Alternative Construction Materials",
+   "Opportunities and Challenges in the Production of Alternative Construction Materials in Thailand",
+   "Developing Alternative Construction Materials with Enhanced Properties",
+   "Improving the Properties of Alternative Construction Materials with New Technologies",
+   "Research and Development of Alternative Construction Materials from Local Resources",
+   "Integrating Alternative Construction Materials into the Circular Economy Concept",
+   "Building Networks and Collaboration for the Development of Alternative Construction Materials" 
+]
