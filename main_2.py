@@ -4,10 +4,11 @@ from datetime import datetime
 import os
 from prefect import task, flow
 import pandas as pd
-from lakefs.client import Client
-import lakefs
-from lakefs import repositories
+from prefect.schedules import Interval
+from pathlib import Path
+from datetime import timedelta
 
+# คำค้นหาหลายคำที่เกี่ยวกับ alternative construction materials
 search_keywords = [
     "Life Cycle Assessment of Alternative Construction Materials",
     "Physical and Mechanical Properties of Compressed Earth Blocks",
@@ -29,9 +30,7 @@ search_keywords = [
     "Research and Development of Alternative Construction Materials from Local Resources",
     "Integrating Alternative Construction Materials into the Circular Economy Concept",
     "Building Networks and Collaboration for the Development of Alternative Construction Materials" 
-
 ]
-
 
 @task
 def create_data_folder_and_csv(csv_path: str):
@@ -55,21 +54,32 @@ def load_existing_links(csv_path: str):
     return existing_links
 
 
-
 @task
-def load_to_lakefs(df: pd.DataFrame):
+def read_from_lakefs() -> pd.DataFrame:
     repo_name = "scrape-news"
     branch_name = "main"
     path = "scrape-news.parquet"
     lakefs_s3_path = f"s3://{repo_name}/{branch_name}/{path}"
-
-    client = Client(
-        host="http://lakefsdb:8000",
-        username="access_key",  
-        password="secret_key",
-        verify_ssl=False,
+    storage_options = {
+        "key": "access_key",
+        "secret": "secret_key",
+        "client_kwargs": {
+            "endpoint_url": "http://lakefsdb:8000"
+        }
+    }
+    df = pd.read_parquet(
+        lakefs_s3_path,
+        storage_options=storage_options,
+        engine='pyarrow',
     )
-    lakefs.repository(repo_name, client=client).create(storage_namespace=f"local://{repo_name}", exist_ok=True)
+    return df
+
+@task
+def load_to_lakefs_incremental(df: pd.DataFrame):
+    repo_name = "scrape-news"
+    branch_name = "main"
+    path = "scrape-news.parquet"
+    lakefs_s3_path = f"s3://{repo_name}/{branch_name}/{path}"
     storage_options = {
         "key": "access_key",
         "secret": "secret_key",
@@ -85,7 +95,7 @@ def load_to_lakefs(df: pd.DataFrame):
     )
 
 @task
-def scrape_and_save(keyword: str):
+def scrape_and_save(keyword: str) -> pd.DataFrame:
     rss_url = f"https://news.google.com/rss/search?q={keyword.replace(' ', '+')}"
     feed = feedparser.parse(rss_url)
 
@@ -100,20 +110,57 @@ def scrape_and_save(keyword: str):
             "month": published_date.month,
             "day": published_date.day
         })
+
+    if feed.entries:
+        fallback_date = published_date
+    else:
+        fallback_date = datetime.now()
+
+
     df = pd.DataFrame(data)
     return df
+
     return new_entries
 
 @flow
-def scrape_news_flow():
+def scrape_news_flow_2():
+
+    all_df = []
     for keyword in search_keywords:
-        # new_entries = scrape_and_save(csv_path, keyword, existing_links)
         df = scrape_and_save(keyword)
-        # df.to_csv("data.csv", index=False)
-        load_to_lakefs(df=df)
-        break
-        total_new_entries += new_entries
+        all_df.append(df)
+        break  # ← Remove or keep depending on whether you want to process only the first keyword
+
+    # Combine all scraped results
+    df_all = pd.concat(all_df, ignore_index=True)
+
+
+    df_lakefs = read_from_lakefs()
+
+    df_lakefs["uid"] = df_lakefs["link"].astype(str) + df_lakefs["title"].astype(str)
+    df_all["uid"] = df_all["link"].astype(str) + df_all["title"].astype(str)
+
+    # Filter only new entries
+    new_df = df_all[~df_all["uid"].isin(df_lakefs["uid"])]
+    new_df.drop(columns=["uid"], inplace=True, errors="ignore")
+    if len(new_df) > 0:
+        # Step 4: Load only new data to lakeFS
+        load_to_lakefs_incremental(df=new_df)
+    else:
+        return
+
     # print(f"✅ ดึงข่าวใหม่ {total_new_entries} รายการจาก {len(search_keywords)} คำค้นและบันทึกลง scrap_data.csv แล้ว")
 
 if __name__ == "__main__":
-    scrape_news_flow()
+    # scrape_news_flow_2()
+    scrape_news_flow_2.from_source(
+        source=Path(__file__).parent,
+        entrypoint="./main_2.py:scrape_news_flow_2",
+    ).deploy(
+        name="scrape-news",
+        work_pool_name="scrape-news",
+        schedule=Interval(
+            timedelta(minutes=15),
+            timezone="Asia/Bangkok"
+        )
+    )

@@ -1,4 +1,20 @@
 services:
+
+  lakefsdb:
+    container_name: lakefs_db
+    image: treeverse/lakefs:1.7.0
+    ports:
+      - 8001:8000
+    environment:
+      LAKEFS_INSTALLATION_USER_NAME: "admin"
+      LAKEFS_INSTALLATION_ACCESS_KEY_ID: "access_key"
+      LAKEFS_INSTALLATION_SECRET_ACCESS_KEY: "secret_key"
+      LAKEFS_DATABASE_TYPE: "local"
+      LAKEFS_AUTH_ENCRYPT_SECRET_KEY: "wait"
+      LAKEFS_BLOCKSTORE_TYPE: "local"
+    volumes:
+      - ./data/:/home/lakefs/
+
   ### Prefect Database
   database:
     image: postgres:alpine
@@ -45,7 +61,7 @@ services:
       - PREFECT_API_URL=http://server:4200/api
     profiles: ["worker"]
     volumes:
-      - "./main.py:/root/flows/main.py"
+      - "./main_2.py:/root/flows/main_2.py"
       - "./config_path.py:/root/flows/config_path.py"
       - "./requirements.txt:/root/flows/requirements.txt"
       - "./pyproject.toml:/root/flows/pyproject.toml"
@@ -60,6 +76,7 @@ services:
     working_dir: "/root/flows"
     volumes:
       - "./main.py:/root/flows/main.py"
+      - "./main_2.py:/root/flows/main_2.py"
       - "./config_path.py:/root/flows/config_path.py"
       - "./requirements.txt:/root/flows/requirements.txt"
       - "./pyproject.toml:/root/flows/pyproject.toml"
